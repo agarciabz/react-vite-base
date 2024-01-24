@@ -12,23 +12,52 @@ describe("useDebounce", () => {
   });
 
   it("should initialize with null state", () => {
-    const { result } = renderHook(() => useDebounce<string>(null, 1000));
-    expect(result.current[0]).toBeNull();
+    const { result } = renderHook(() => useDebounce<string>());
+    const [state] = result.current;
+    expect(state).toBeNull();
   });
 
   it("should update state after delay", () => {
-    const { result } = renderHook(() => useDebounce<string>(null, 1000));
+    const { result } = renderHook(() =>
+      useDebounce<string>("Initial value", 1500)
+    );
+    const [initialState, setState] = result.current;
 
     act(() => {
-      result.current[1]("new value");
+      setState("new value");
     });
 
-    expect(result.current[0]).toBeNull();
+    expect(initialState).toEqual("Initial value");
 
     act(() => {
-      vi.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(1500);
     });
 
-    expect(result.current[0]).toBe("new value");
+    const [updatedState] = result.current;
+
+    expect(updatedState).toEqual("new value");
+  });
+
+  it("should cancel timeout on unmount", () => {
+    const { result, unmount } = renderHook(() =>
+      useDebounce<string>("Initial value", 1500)
+    );
+    const [initialState, setState] = result.current;
+
+    act(() => {
+      setState("new value");
+    });
+
+    expect(initialState).toEqual("Initial value");
+
+    unmount();
+
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+
+    const [updatedState] = result.current;
+
+    expect(updatedState).toEqual("Initial value");
   });
 });
